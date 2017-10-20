@@ -5,7 +5,6 @@ from dateutil import parser
 
 
 header = sys.stdin.readline().rstrip().split(",")
-print(header)
 
 for line in sys.stdin:
     formatted = line.rstrip().split(",")
