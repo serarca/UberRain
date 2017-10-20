@@ -41,7 +41,8 @@ def process_array(driver_array):
     final_hour = parser.parse(sorted_array[0]['dropoff_time']).strftime("%Y-%m-%d %H")
     results = {}
     while first_hour <= final_hour:
-        results[first_hour] = {'not_on_duty':0.0, "time_with_pass"}
+        results[first_hour] = {'not_on_duty':0.0, "time_with_passengers":0.0,
+                                "passengers_picked_up":0.0, "trips_started": 0.0}
         first_hour = (parser.parse(first_hour) + timedelta(hours = 1)).strftime("%Y-%m-%d %H")
 
     # Fill results
@@ -50,6 +51,7 @@ def process_array(driver_array):
         # Extract details
         pickup_time = parser.parse(sorted_array[i]['pickup_time'])
         dropoff_time = parser.parse(sorted_array[i]['dropoff_time'])
+        total_time = pickup_time - dropoff_time
 
         # Check if driver is on duty and add it to results
         on_duty = (pickup_time - last_dropoff < timedelta(minutes = 30))
@@ -57,28 +59,34 @@ def process_array(driver_array):
             begin_rest = last_dropoff.strftime("%Y-%m-%d %H")
             end_rest = pickup_time.strftime("%Y-%m-%d %H")
             while (begin_rest <= end_rest):
-                results[begin_rest]['not_on_duty'] =
-                    results[begin_rest]['not_on_duty'] +
-                    intersection(parser.parse(begin_rest), pickup_time, dropoff_time)
+                results[begin_rest]['not_on_duty'] += intersection(
+                parser.parse(begin_rest), last_dropoff, pickup_time)
                 begin_rest = (parser.parse(begin_rest)
                             + timedelta(hours = 1)).strftime("%Y-%m-%d %H")
 
+        # Check how much time with passengers, how much money and how many miles
+        begin_ride = pickup_time.strftime("%Y-%m-%d %H")
+        end_ride = dropoff_time.strftime("%Y-%m-%d %H")
+        while (begin_ride <= end_ride):
+            time_with_passengers = intersection(
+                parser.parse(begin_ride), pickup_time, dropoff_time)
+            results[begin_ride]["time_with_passengers"] += time_with_passengers
+            results[begin_ride]["miles"] += (timedelta(
+                hours = time_with_passengers)/total_time) *
+                sorted_array[i]['trip_distance']
+            results[begin_ride]["earnings"] += (timedelta
+                (hours = time_with_passengers)/total_time) *
+                sorted_array[i]['total_fare']
+
+            begin_ride = (parser.parse(begin_ride)
+                        + timedelta(hours = 1)).strftime("%Y-%m-%d %H")
+
+        # How many passengers picked up and trips started
+        begin_ride = pickup_time.strftime("%Y-%m-%d %H")
+        results[begin_ride]["passengers_picked_up"] += sorted_array[i]['passenger_count']
+        results[begin_ride]["trips_started"] += 1
 
 
-
-
-
-    results = { }
-    for i in range(0, n - 1):
-        pickup_time = sorted_array[i]['pickup_time']
-        dropoff_time = sorted_array[i]['dropoff_time']
-        next_pickup_time = sorted_array[i + 1]['pickup_time']
-        if (dropoff_time<pickup_time):
-            sorted_array[i]['dropoff_time'] = pickup_time
-        if (dropoff_time > next_pickup_time):
-            sorted_array[i + 1]['pickup_time'] = dropoff_time
-
-    initial_hour = sorted_array[0][""]
 
 
 header = ['key','medallion_hack_license_pickup_datetime', 'medallion',
