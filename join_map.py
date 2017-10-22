@@ -7,7 +7,6 @@ import csv
 in_file = csv.reader(sys.stdin,delimiter='\t')
 
 output_header = ['join_key','medallion','hack_license','pickup_datetime','dropoff_datetime','passenger_count','trip_time_in_secs','trip_distance','fare_amount','total_fare','dataset']
-#print('\t'.join(output_header))
 
 for line in in_file:
 	dict = {}
