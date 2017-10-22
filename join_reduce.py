@@ -1,38 +1,39 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 import sys
 import csv
 
+def merge_data(var_name,out_dict,in_dict):
+    out_dict[var_name] = in_dict[var_name]
+    return
+
 #Input from stdin
-in_file = csv.reader(sys.stdin,delimiter=‘\t’)
+in_file = csv.reader(sys.stdin,delimiter='\t')
+input_header = ['join_key','medallion','hack_license','pickup_datetime','dropoff_datetime','passenger_count','trip_time_in_secs','trip_distance','fare_amount','total_fare','dataset']
+output_header = ['join_key','medallion','hack_license','pickup_datetime','dropoff_datetime','passenger_count','trip_time_in_secs','trip_distance','fare_amount','total_fare']
 
-#Set defaults
-last_join_key = None
-last_dropoff_datetime = "-"
-last_passenger_count = "-"
-last_trip_time_in_secs = "-"
-last_trip_distance = "-"
-last_total_fare = "-"
-last_total_amount = "-"
-
+output = {}
+last_join_key = ''
 for line in in_file:
-	line = list(line)
-	join_key = line[0]
-	dataset = int(line[10])
-	if dataset==1:
-		last_dropoff_datetime = line[4]
-		last_passenger_count = line[5]
-		last_trip_time_in_secs = line[6]
-		last_trip_distance = line[7]
-	elif dataset==2:
-		last_total_fare = line[8]
-		last_total_amount = line[9]
-	if last_join_key == join_key:
-		line[4] = last_dropoff_datetime
-		line[5] = last_passenger_count
-		line[6] = last_trip_time_in_secs
-		line[7] = last_trip_distance
-		line[8] = last_total_fare
-		line[9] = last_total_amount
-		print('\t'.join(line))
-	last_join_key = join_key
+    dict = {input_header[i]:line[i] for i in range(0,len(line))}
+
+    #Pull variables
+    var_list = ['join_key','medallion','hack_license','pickup_datetime']
+    for var in var_list:
+        merge_data(var,output,dict)
+    #Pull variables from dataset 1
+    if int(dict['dataset'])==1:
+        var_list = ['dropoff_datetime','passenger_count','trip_time_in_secs','trip_distance']
+        for var in var_list:
+            merge_data(var,output,dict)
+    #Pull variables from dataset 2
+    elif int(dict['dataset'])==2:
+        var_list = ['fare_amount','total_fare']
+        for var in var_list:
+            merge_data(var,output,dict)
+    if last_join_key == dict['join_key']:
+        merged_output = []
+        for x in output_header:
+            merged_output.append(output[x])
+        print('\t'.join(merged_output))
+    last_join_key = dict['join_key']
