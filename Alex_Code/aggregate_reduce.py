@@ -4,6 +4,7 @@ import sys
 import csv
 
 
+
 in_file = csv.reader(sys.stdin, delimiter=',')
 
 # headers
@@ -16,15 +17,12 @@ master_array = []
 key = ""
 driver_count = 1
 
-# formates array
+# formates array, converts values from str to floats for indices 4:10
 def format_line(line):
 	formatted = []
 	for i in range(len(in_header)):
-		if (i >= 4):
-			try: 
-				value = int(line.pop(0))
-			except ValueError:
-				pass
+		if(i >= 4):
+			value = float(line.pop(0))
 		else:
 			value = line.pop(0)
 		formatted.append(value)
@@ -44,18 +42,18 @@ for line in in_file:
 	
 	# if key match
 	if (key == last_key):
-		driver_count += 1
+		driver_count += 1 #adds driver
 
 		# aggregate
-		for i in range(3, len(in_header)):
+		for i in range(4 , len(in_header)):
 			master_array[i] += line[i]
-	# if key doesn't match 
+	# if new group 
 	else:
+		# string values
 		line1 = ('{0},{1},{2}'.format(master_array[1], master_array[2], str(driver_count)))
+		# float values
 		line2 =	(','.join(str(master_array[i]) for i in range(4, len(master_array))))
 		print(line1 + "," + line2)
 		master_array = line	
 		last_key = key
-		driver_count = 1
-# output header
-print(','.join(out_header[i] for i in range(len(out_header))))
+		driver_count = 1 #reset driver count
