@@ -1,8 +1,11 @@
 import sys
 import csv
 
+# Still needs to deal with hack id
+
 in_file = csv.reader(sys.stdin, delimiter=',')
 
+# headers
 in_header = ['key', 'date', 'hour', 'hack', 't_onduty', 't_occupied', 'n_pass', 'n_trip', 'n_mile', 'earnings']
 out_header = ['date', 'hour', 'drivers_onduty' 't_onduty', 't_occupied', 'n_pass', 'n_trip', 'n_mile', 'earnings'] 
 
@@ -11,8 +14,8 @@ last_key = None
 master_array = []	
 key = ""
 driver_count = 1
-# formates array
 
+# formates array
 def format_line(line):
 	formatted = []
 	for i in range(len(in_header)):
@@ -25,7 +28,6 @@ def format_line(line):
 			value = line.pop(0)
 		formatted.append(value)
 	return formatted
-
 
 # streaming
 for line in in_file:
@@ -46,6 +48,7 @@ for line in in_file:
 		# aggregate
 		for i in range(3, len(in_header)):
 			master_array[i] += line[i]
+	# if key doesn't match 
 	else:
 		line1 = ('{0},{1},{2}'.format(master_array[1], master_array[2], str(driver_count)))
 		line2 =	(','.join(str(master_array[i]) for i in range(4, len(master_array))))
