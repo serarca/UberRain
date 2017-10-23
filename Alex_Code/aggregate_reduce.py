@@ -1,7 +1,8 @@
+#!/usr/bin/env python3
+
 import sys
 import csv
 
-# Still needs to deal with hack id
 
 in_file = csv.reader(sys.stdin, delimiter=',')
 
