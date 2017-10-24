@@ -38,7 +38,7 @@ for line in sys.stdin:
 	
     # if key match
     elif (key == last_key):
-        driver_count += 1
+        drivers_onduty += 1
 
         # aggregate all statistics
         for i in range(4 , len(in_header)):
@@ -47,16 +47,16 @@ for line in sys.stdin:
    # if new group (hour), print results of previous group 
     else:
         # string values
-        line1 = ('{0}\t{1}\t{2}'.format(master_array[1], master_array[2], str(driver_count)))
+        line1 = ('{0}\t{1}\t{2}'.format(master_array[1], master_array[2], str(drivers_onduty)))
         # float values
         line2 =	('\t'.join(str(master_array[i]) for i in range(4, len(master_array))))
         print(line1 + "\t" + line2)
         # Reset for next group
         master_array = line	
         last_key = key
-        driver_count = 1
+        drivers_onduty = 1
 
 # print results for final group
-line1 = ('{0}\t{1}\t{2}'.format(master_array[1], master_array[2], str(driver_count)))
+line1 = ('{0}\t{1}\t{2}'.format(master_array[1], master_array[2], str(drivers_onduty)))
 line2 = ('\t'.join(str(master_array[i]) for i in range(4, len(master_array))))
 print(line1 + "\t" + line2)
