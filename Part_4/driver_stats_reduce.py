@@ -2,7 +2,6 @@
 
 import sys
 from datetime import datetime, timedelta
-import dateutil.parser as parser
 
 # This function calculates the intersection between an hour and an interval
 def intersection(hour, beg_interval, end_interval):
@@ -23,19 +22,19 @@ def intersection(hour, beg_interval, end_interval):
 
 def process_array(driver_array):
 
-    sorted_array = sorted(driver_array, key = lambda line:parser.parse(
-        line["pickup_datetime"]).strftime("%Y-%m-%d %H"))
+    sorted_array = sorted(driver_array, key=lambda line:datetime.strptime(
+        line["pickup_datetime"],'%Y-%m-%d %H:%M:%S'))
 
-    # Correct errors
+    # Correct errors - account for overlapping trips (data entry errors)
     for i in range(0, len(sorted_array)):
-        pickup_time = parser.parse(sorted_array[i]['pickup_datetime'])
-        dropoff_time = parser.parse(sorted_array[i]['dropoff_datetime'])
+        pickup_time = datetime.strptime(sorted_array[i]['pickup_datetime'],'%Y-%m-%d %H:%M:%S')
+        dropoff_time = datetime.strptime(sorted_array[i]['dropoff_datetime'],'%Y-%m-%d %H:%M:%S')
         if (dropoff_time<pickup_time):
             sorted_array[i]['dropoff_datetime'] = pickup_time.strftime("%Y-%m-%d %H:%M:%S")
         if (i<len(sorted_array)-1):
-            next_pickup_time = parser.parse(sorted_array[i + 1]['pickup_datetime'])
+            next_pickup_time = datetime.strptime(sorted_array[i + 1]['pickup_datetime'],'%Y-%m-%d %H:%M:%S')
             if (dropoff_time > next_pickup_time):
-                sorted_array[i + 1]['pickup_datetime'] = dropoff_time.strftime("%Y-%m-%d %H:%M:%S")
+                sorted_array[i]['dropoff_datetime'] = pickup_time.strftime("%Y-%m-%d %H:%M:%S")
 
         # Check for impossible speeds
         # (Greater than speed limit of 65mph, and correct miles traveled to upper limit)
@@ -44,28 +43,25 @@ def process_array(driver_array):
         if(travel_time.total_seconds() > 0):
             if (trip_distance / (travel_time.total_seconds()/3600) > 65):
                 sorted_array[i]['trip_distance'] = str(65 * travel_time.total_seconds()/3600)
-        #Skip trips where travel time is less than or equal to zero (likely errors)
-        else:
-            continue
 
     # Construct result dictionary (one entry for each hour)
-    first_hour = parser.parse(sorted_array[0]['pickup_datetime']).strftime("%Y-%m-%d %H")
-    final_hour = parser.parse(sorted_array[len(sorted_array)-1]['dropoff_datetime']).strftime("%Y-%m-%d %H")
+    first_hour = datetime.strptime(sorted_array[0]['pickup_datetime'],'%Y-%m-%d %H:%M:%S').strftime("%Y-%m-%d %H")
+    final_hour = datetime.strptime(sorted_array[len(sorted_array)-1]['dropoff_datetime'],'%Y-%m-%d %H:%M:%S').strftime("%Y-%m-%d %H")
     results = {}
     while first_hour <= final_hour:
         results[first_hour] = {"not_on_duty":0.0, "t_occupied":0.0,
                                 "n_pass":0.0, "n_trip": 0.0,
                                 "n_mile":0.0, "earnings":0.0}
-        first_hour = (parser.parse(first_hour) + timedelta(hours = 1)).strftime("%Y-%m-%d %H")
+        first_hour = (datetime.strptime(first_hour,'%Y-%m-%d %H') + timedelta(hours = 1)).strftime("%Y-%m-%d %H")
 
     # Fill results
-    last_dropoff = parser.parse(sorted_array[0]['pickup_datetime'])
+    last_dropoff = datetime.strptime(sorted_array[0]['pickup_datetime'],'%Y-%m-%d %H:%M:%S')
 
     # Loop through rides
     for i in range(0, len(sorted_array)):
         # Extract details
-        pickup_time = parser.parse(sorted_array[i]['pickup_datetime'])
-        dropoff_time = parser.parse(sorted_array[i]['dropoff_datetime'])
+        pickup_time = datetime.strptime(sorted_array[i]['pickup_datetime'],'%Y-%m-%d %H:%M:%S')
+        dropoff_time = datetime.strptime(sorted_array[i]['dropoff_datetime'],'%Y-%m-%d %H:%M:%S')
         total_time = dropoff_time - pickup_time
         if (total_time.total_seconds()==0):
             last_dropoff = dropoff_time
@@ -77,30 +73,27 @@ def process_array(driver_array):
             begin_rest = last_dropoff.strftime("%Y-%m-%d %H")
             end_rest = pickup_time.strftime("%Y-%m-%d %H")
             while (begin_rest <= end_rest):
-                results[begin_rest]['not_on_duty'] += intersection(parser.parse(begin_rest), last_dropoff, pickup_time)
-                begin_rest = (parser.parse(begin_rest) + timedelta(hours = 1)).strftime("%Y-%m-%d %H")
-
+                results[begin_rest]['not_on_duty'] += intersection(datetime.strptime(begin_rest,'%Y-%m-%d %H'), last_dropoff, pickup_time)
+                begin_rest = (datetime.strptime(begin_rest,'%Y-%m-%d %H') + timedelta(hours = 1)).strftime("%Y-%m-%d %H")
+        last_dropoff = dropoff_time
 
         # Check how much time with passengers, how much money and how many miles
         begin_ride = pickup_time.strftime("%Y-%m-%d %H")
         end_ride = dropoff_time.strftime("%Y-%m-%d %H")
         while (begin_ride <= end_ride):
             t_occupied = intersection(
-                parser.parse(begin_ride), pickup_time, dropoff_time)
+                datetime.strptime(begin_ride,'%Y-%m-%d %H'), pickup_time, dropoff_time)
             results[begin_ride]["t_occupied"] += t_occupied
             results[begin_ride]["n_mile"] += ((timedelta(hours = t_occupied).total_seconds()/total_time.total_seconds()) *
                 float(sorted_array[i]['trip_distance']))
             results[begin_ride]["earnings"] += ((timedelta(hours = t_occupied).total_seconds()/total_time.total_seconds()) *
                 float(sorted_array[i]['total_fare']))
-
-            begin_ride = (parser.parse(begin_ride) + timedelta(hours = 1)).strftime("%Y-%m-%d %H")
+            begin_ride = (datetime.strptime(begin_ride,'%Y-%m-%d %H') + timedelta(hours = 1)).strftime("%Y-%m-%d %H")
 
         # How many passengers picked up and trips started
         begin_ride = pickup_time.strftime("%Y-%m-%d %H")
         results[begin_ride]["n_pass"] += int(sorted_array[i]['passenger_count'])
         results[begin_ride]["n_trip"] += 1
-        #pdb.set_trace()
-        last_dropoff = dropoff_time
 
     for k in results.keys():
         results[k]['date'] = k[0:10]
