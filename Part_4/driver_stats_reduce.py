@@ -100,7 +100,9 @@ def process_array(driver_array):
         results[k]['hour'] = k[11:13]
         results[k]['hack'] = sorted_array[0]['hack_license']
         results[k]['t_onduty'] = 1 - results[k]['not_on_duty']
-        print ('\t'.join([str(results[k][x]) for x in keys_result]))
+        #Print results if time on duty is greater than zero
+        if(results[k]['t_onduty'] > 0):
+            print ('\t'.join([str(results[k][x]) for x in keys_result]))
 
 
 
