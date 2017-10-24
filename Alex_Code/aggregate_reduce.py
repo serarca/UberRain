@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 
 import sys
-import csv
-
-in_file = csv.reader(sys.stdin, delimiter='\t')
 
 # headers
 in_header = ['key', 'date', 'hour', 'hack', 't_onduty', 't_occupied', 'n_pass', 'n_trip', 'n_mile', 'earnings']
@@ -17,6 +14,7 @@ driver_count = 1
 
 # formates array, converts values from str to floats for indices 4:10
 def format_line(line):
+    line = line.rstrip().split("\t")
     formatted = []
     for i in range(len(in_header)):
         if(i >= 4):
@@ -27,11 +25,11 @@ def format_line(line):
     return formatted
 
 # streaming
-for line in in_file:
-    key = line[0]
-
+for line in sys.stdin:
     # formats line
     line = format_line(line)
+
+    key = line[0]
 	
     # if first entry
     if last_key == None:
