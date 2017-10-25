@@ -117,6 +117,17 @@ keys_result = ['date','hour','hack','t_onduty','t_occupied','n_pass','n_trip','n
 for line in sys.stdin:
     formatted = line.rstrip().split("\t")
     formatted_dict = {header[i]:formatted[i] for i in range(0, len(header))}
+
+    # Check formats of data fields used in calculations. If error, skip observation.
+    try:
+        pickup_datetime = datetime.strptime(formatted_dict['pickup_datetime'],'%Y-%m-%d %H:%M:%S')
+        dropoff_datetime = datetime.strptime(formatted_dict['dropoff_datetime'],'%Y-%m-%d %H:%M:%S')
+        passenger_count = float(formatted_dict['passenger_count'])
+        trip_distance = float(formatted_dict['trip_distance'])
+        total_fare = float(formatted_dict['total_fare'])
+    except ValueError:
+        continue
+
     # Check the key
     new_key = formatted_dict['key']
     if new_key!=key:
